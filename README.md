@@ -4,14 +4,19 @@ doppio: A JVM in TypeScript
 _doppio_ is a double shot of espresso.
 In this case it's also a JVM written in [TypeScript](http://www.typescriptlang.org/).
 
-To try doppio now, head to the [live demo page](http://int3.github.io/doppio/).
+To try doppio now, head to the [live demo page](http://plasma-umass.github.io/doppio-demo/).
 
-To learn more, head to the [doppio wiki](https://github.com/int3/doppio/wiki).
+To learn more, head to the [doppio wiki](https://github.com/plasma-umass/doppio/wiki), or read our [academic paper](http://dl.acm.org/citation.cfm?id=2594293) [(alt. link w/ no paywall)](https://plasma-umass.github.io/doppio-demo/paper.pdf) published at [PLDI 2014](http://conferences.inf.ed.ac.uk/pldi2014/)!
 
 You can also get in touch via our [mailing list][mail] or via the IRC channel
 \#plasma-umass on Freenode.
 
 [mail]: https://groups.google.com/forum/?fromgroups#!forum/plasma-umass-gsoc
+
+Integrating Into Your Site
+--------------------------
+
+Check out our [Developer Guide](https://github.com/plasma-umass/doppio/wiki/Doppio-Developer-Guide) for information on how you can integrate doppio into your website!
 
 Getting & Building the Code
 ---------------------------
@@ -29,7 +34,7 @@ If you are on Windows, you will need the following installed:
 
 Run the following commands to build doppio. Note that your first time building may take some time, as the build script will download the entire Java Class Library.
 
-    git clone https://github.com/int3/doppio.git
+    git clone https://github.com/plasma-umass/doppio.git
     cd doppio
     npm install
     bower install

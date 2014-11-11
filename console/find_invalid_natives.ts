@@ -11,11 +11,13 @@ import fs = require('fs');
 import path = require('path');
 import class_data = require('../src/ClassData');
 import methods = require('../src/methods');
-import natives = require('../src/natives');
 import util = require('../src/util');
+import JVM = require('../src/jvm');
+import os = require('os');
 var ReferenceClassData = class_data.ReferenceClassData,
     classpath: string[] = [path.resolve(__dirname, '..', 'vendor', 'classes'),
-                           path.resolve(__dirname, '..')];
+                           path.resolve(__dirname, '..')],
+    jvmObject: JVM;
 
 /**
  * Implementation of Levenshtein distance.
@@ -82,20 +84,13 @@ function getNativeSigs(className: string): string[] {
  * format) that have native methods implemented in Doppio.
  */
 function getClassesWithImplementedNatives(): {[pkgName: string]: string[]} {
-  var nativeImpls: any = natives.native_methods, currMethodName: string,
-      methods: {[pkgName: string]: string[]} = {},
-      nameSplit: string[], klassName: string, methodSig: string;
-  for (currMethodName in nativeImpls) {
-    if (nativeImpls.hasOwnProperty(currMethodName)) {
-      // L + pkg_name + ; + :: + fn_name
-      nameSplit = currMethodName.split('::');
-      klassName = util.descriptor2typestr(nameSplit[0]);
-      if (!methods.hasOwnProperty(klassName)) {
-        methods[klassName] = [];
-      }
-      methods[klassName].push(nameSplit[1]);
-    }
-  }
+  var nativeImpls: { [clsName: string]: { [methSig: string]: Function } } = jvmObject.getNatives(),
+      methods: {[pkgName: string]: string[]} = {};
+
+  Object.keys(nativeImpls).forEach((clsName: string) => {
+    methods[clsName] = Object.keys(nativeImpls[clsName]);
+  });
+
   return methods;
 }
 
@@ -173,8 +168,7 @@ function printResult(result: {[klassName: string]: {[sig: string]: string}}): vo
  * Main function.
  */
 function main() {
-  var implNatives: {[pkgName: string]: string[]} =
-        getClassesWithImplementedNatives(),
+  var implNatives: { [pkgName: string]: string[] } = getClassesWithImplementedNatives(),
       klassNatives: string[], klassImplNatives: string[], klassName: string,
       missingNatives: string[],
       similarMap: {[klassName: string]: {[sig: string]: string}} = {};
@@ -194,4 +188,13 @@ function main() {
   printResult(similarMap);
 }
 
-main();
+new JVM({
+  bootstrapClasspath: [path.resolve(__dirname, '../vendor/classes')],
+  javaHomePath: path.resolve(__dirname, '../vendor/java_home'),
+  extractionPath: path.resolve(os.tmpDir(), 'doppio_jars'),
+  classpath: [],
+  nativeClasspath: [path.resolve(__dirname, '../src/natives')]
+}, function(err, _jvmObject: JVM) {
+  jvmObject = _jvmObject;
+  main();
+});

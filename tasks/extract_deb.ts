@@ -47,7 +47,16 @@ function extract_data(grunt: IGrunt, archive_file: {src: string[]; dest: string}
     // XXX: DefinitelyTyped's node.d.ts doesn't have a 'close' defined.
     (<any> stream).close();
     cb(err);
-  };
+  }
+  function extract_tarfile(data: NodeBuffer): void {
+    // Write the tar file to disc so we can create a read stream for it.
+    // There's no built-in way to create a stream from a buffer in Node.
+    fs.writeFileSync(tarFile, data);
+    // Extract the tar file.
+    stream = fs.createReadStream(tarFile);
+    stream.pipe(tar.Extract({ path: dest_dir })).on("error", stream_finish_cb).on("end", stream_finish_cb);
+  }
+
   if (fs.existsSync(tarFile)) {
     grunt.log.writeln('Ignoring file ' + path.basename(archive_file.src[0]) + ' (already extracted).');
     return cb();
@@ -60,19 +69,20 @@ function extract_data(grunt: IGrunt, archive_file: {src: string[]; dest: string}
     if (file.name() === 'data.tar.gz') {
       found = true;
       break;
+    } else if (file.name() === 'data.tar.xz') {
+      grunt.fatal("Debian archive uses the tar.xz file format, which we do not support.");
+      break;
     }
   }
 
   if (found) {
-    // Decompress the file.
-    zlib.gunzip(file.fileData(), function(err, buff) {
-      if (err) return cb(err);
-      // Write the tar file to disc so we can create a read stream for it.
-      // There's no built-in way to create a stream from a buffer in Node.
-      fs.writeFileSync(tarFile, buff);
-      // Extract the tar file.
-      stream = fs.createReadStream(tarFile);
-      stream.pipe(tar.Extract({ path: dest_dir })).on("error", stream_finish_cb).on("end", stream_finish_cb);
+    // Decompress the file: Gunzip
+    zlib.gunzip(file.fileData(), function (err, buff) {
+      if (err) {
+        cb(err);
+      } else {
+        extract_tarfile(buff);
+      }
     });
   } else {
     cb(new Error("Could not find data.tar.gz in " + archive_file.src[0] + "."));
